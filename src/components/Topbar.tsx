@@ -8,6 +8,7 @@ interface TopbarProps {
   subtitle?: string;
   action?: {
     label: string;
+    icon?: React.ReactNode;
     onClick?: () => void;
   };
   searchPlaceholder?: string;
@@ -159,7 +160,7 @@ export function Topbar({
             onMouseDown={e => { e.currentTarget.style.transform = "scale(0.97)"; }}
             onMouseUp={e => { e.currentTarget.style.transform = "scale(1)"; }}
           >
-            <Plus style={{ width: 13, height: 13 }} />
+            {action.icon || <Plus style={{ width: 13, height: 13 }} />}
             {action.label}
           </button>
         )}
