@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Agent {
+  id             String     @id @default(uuid())
+  name           String
+  email          String     @unique
+  phone          String?
+  role           Role       @default(AGENT)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  auditLogs      AuditLog[]
+  calls          Call[]
+  leads          Lead[]     @relation("AgentLeads")
+  assignedByLead Lead[]     @relation("AssignedLeads")
+  sales          Sale[]
+
+  @@map("agents")
+}
+
+model Product {
+  id        String        @id @default(uuid())
+  name      String
+  category  String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  currency  String?       @default("INR")
+  duration  String?
+  price     Decimal?      @db.Decimal(10, 2)
+  status    String?       @default("ACTIVE")
+  tiers     PricingTier[]
+  sales     Sale[]
+
+  @@map("products")
+}
+
+model PricingTier {
+  id        String   @id @default(uuid())
+  productId String
+  label     String
+  amount    Decimal  @db.Decimal(10, 2)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sales     Sale[]
+
+  @@map("pricing_tiers")
+}
+
+model Lead {
+  id              String     @id @default(uuid())
+  name            String
+  phone           String?
+  email           String?
+  status          LeadStatus @default(NEW)
+  source          LeadSource @default(ORGANIC)
+  education       Education?
+  priority        Priority   @default(MEDIUM)
+  assignedAgentId String?
+  assignedById    String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  calls           Call[]
+  agent           Agent?     @relation("AgentLeads", fields: [assignedAgentId], references: [id])
+  assignedBy      Agent?     @relation("AssignedLeads", fields: [assignedById], references: [id])
+  sales           Sale[]
+
+  @@index([assignedAgentId])
+  @@index([status])
+  @@index([priority])
+  @@map("leads")
+}
+
+model Call {
+  id            String      @id @default(uuid())
+  leadId        String
+  agentId       String
+  callTime      DateTime    @default(now())
+  duration      Int?
+  outcome       CallOutcome
+  attemptNumber Int         @default(1)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  agent         Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  lead          Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([agentId])
+  @@index([createdAt])
+  @@map("calls")
+}
+
+model Sale {
+  id            String       @id @default(uuid())
+  leadId        String
+  productId     String
+  tierId        String?
+  agentId       String
+  amount        Decimal      @db.Decimal(10, 2)
+  status        SaleStatus   @default(PAID)
+  paymentMethod String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  agent         Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  lead          Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  product       Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pricingTier   PricingTier? @relation(fields: [tierId], references: [id])
+
+  @@index([leadId])
+  @@index([agentId])
+  @@index([createdAt])
+  @@map("sales")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  entityId   String
+  entityType String
+  action     String
+  changedBy  String?
+  oldValue   Json?
+  newValue   Json?
+  createdAt  DateTime @default(now())
+  agent      Agent?   @relation(fields: [changedBy], references: [id])
+
+  @@map("audit_logs")
+}
+
+enum Role {
+  ADMIN
+  AGENT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  CONVERTED
+  LOST
+}
+
+enum LeadSource {
+  WHATSAPP
+  FACEBOOK
+  INSTAGRAM
+  META_ADS
+  ORGANIC
+  OTHER
+}
+
+enum Education {
+  UNDERGRADUATE
+  GRADUATE
+  POSTGRADUATE
+  DIPLOMA
+  OTHER
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum CallOutcome {
+  NO_ANSWER
+  INTERESTED
+  CALLBACK
+  CONVERTED
+}
+
+enum SaleStatus {
+  PAID
+  PENDING
+  REFUNDED
+}
