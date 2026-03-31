@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Antigravity CRM",
+  title: "CRM",
   description: "Clean, professional CRM for sales performance",
 };
 
