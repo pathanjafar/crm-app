@@ -14,8 +14,8 @@ export async function getProductsAction() {
       duration: p.duration,
       status: p.status,
       category: p.category,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
+      createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
+      updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : p.updatedAt,
     }));
   } catch (error) {
     console.error("Failed to fetch products:", error);
