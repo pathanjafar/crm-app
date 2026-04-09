@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db";
 
-// ── Agents ──────────────────────────────────────────────
-export async function getAgentsAction() {
+// ── Users (formerly Agents) ───────────────────────────────────────────
+export async function getUsersAction() {
   try {
-    const agents = await prisma.agent.findMany({
+    const users = await prisma.user.findMany({
       orderBy: { createdAt: "asc" },
       include: {
         _count: { select: { leads: true, sales: true, calls: true } },
@@ -16,25 +16,25 @@ export async function getAgentsAction() {
       }
     });
 
-    return agents.map(a => ({
-      id: a.id,
-      name: a.name,
-      email: a.email,
-      phone: a.phone,
-      role: a.role,
-      createdAt: a.createdAt.toISOString(),
-      totalLeads: a._count.leads,
-      totalSales: a._count.sales,
-      totalCalls: a._count.calls,
-      revenue: a.sales.reduce((sum, s) => sum + Number(s.amount), 0),
+    return users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      phone: u.phone,
+      role: u.role,
+      createdAt: u.createdAt.toISOString(),
+      totalLeads: u._count.leads,
+      totalSales: u._count.sales,
+      totalCalls: u._count.calls,
+      revenue: u.sales.reduce((sum, s) => sum + Number(s.amount), 0),
     }));
   } catch (error) {
-    console.error("getAgentsAction error:", error);
+    console.error("getUsersAction error:", error);
     return [];
   }
 }
 
-export async function createAgentAction(formData: FormData) {
+export async function createUserAction(formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const phone = formData.get("phone") as string;
@@ -43,25 +43,25 @@ export async function createAgentAction(formData: FormData) {
   if (!name || !email) return { success: false, error: "Name and email are required." };
 
   try {
-    await prisma.agent.create({
+    await prisma.user.create({
       data: { name, email, phone: phone || null, role: role as any }
     });
     revalidatePath("/agents");
     return { success: true };
   } catch (error: any) {
-    if (error.code === "P2002") return { success: false, error: "An agent with this email already exists." };
+    if (error.code === "P2002") return { success: false, error: "A user with this email already exists." };
     return { success: false, error: error.message };
   }
 }
 
-export async function updateAgentAction(id: string, formData: FormData) {
+export async function updateUserAction(id: string, formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const phone = formData.get("phone") as string;
   const role = formData.get("role") as string;
 
   try {
-    await prisma.agent.update({
+    await prisma.user.update({
       where: { id },
       data: { name, email, phone: phone || null, role: role as any }
     });
@@ -72,13 +72,13 @@ export async function updateAgentAction(id: string, formData: FormData) {
   }
 }
 
-export async function deleteAgentAction(id: string) {
+export async function deleteUserAction(id: string) {
   try {
-    await prisma.agent.delete({ where: { id } });
+    await prisma.user.delete({ where: { id } });
     revalidatePath("/agents");
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: "Cannot delete agent. They may have leads or sales assigned." };
+    return { success: false, error: "Cannot delete user. They may have leads or sales assigned." };
   }
 }
 
@@ -157,7 +157,7 @@ export async function createSaleAction(formData: FormData) {
 
     if (lead?.assignedAgentId && lead.assignedAgentId !== agentId) {
       // Check if the selling agent is an ADMIN
-      const sellingAgent = await prisma.agent.findUnique({
+      const sellingAgent = await prisma.user.findUnique({
         where: { id: agentId },
         select: { role: true }
       });
@@ -197,6 +197,7 @@ export async function createSaleAction(formData: FormData) {
     return { success: false, error: error.message };
   }
 }
+
 
 export async function getProductsForSelectAction() {
   try {

@@ -5,12 +5,12 @@ import { revalidatePath } from "next/cache";
 
 export async function getAssignDataAction() {
   try {
-    const [leads, agents] = await Promise.all([
-      prisma.lead.findMany({
+    const [leads, users] = await Promise.all([
+      (prisma as any).lead.findMany({
         where: { assignedAgentId: null },
         orderBy: { createdAt: "desc" },
       }),
-      prisma.agent.findMany({
+      (prisma as any).user.findMany({
         include: {
           _count: {
             select: { leads: true }
@@ -20,7 +20,7 @@ export async function getAssignDataAction() {
     ]);
 
     return {
-      leads: leads.map(l => ({
+      leads: (leads as any[]).map(l => ({
         id: l.id,
         name: l.name,
         phone: l.phone,
@@ -30,12 +30,12 @@ export async function getAssignDataAction() {
         priority: l.priority,
         createdAt: l.createdAt.toISOString(),
       })),
-      agents: agents.map(a => ({
-        id: a.id,
-        name: a.name,
-        email: a.email,
-        role: a.role,
-        _count: a._count,
+      agents: (users as any[]).map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        _count: u._count,
       })),
     };
   } catch (error) {
@@ -44,9 +44,10 @@ export async function getAssignDataAction() {
   }
 }
 
+
 export async function assignLeadAction(leadId: string, agentId: string) {
   try {
-    await prisma.lead.update({
+    await (prisma as any).lead.update({
       where: { id: leadId },
       data: {
         assignedAgentId: agentId,

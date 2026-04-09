@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
+import { Providers } from "@/components/Providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,19 +35,21 @@ export default function RootLayout({
           MozOsxFontSmoothing: "grayscale",
         }}
       >
-        <Sidebar />
-        <main
-          style={{
-            flex: 1,
-            minWidth: 0,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: "100vh",
-            overflowX: "hidden",
-          }}
-        >
-          {children}
-        </main>
+        <Providers>
+          <Sidebar />
+          <main
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: "100vh",
+              overflowX: "hidden",
+            }}
+          >
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

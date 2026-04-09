@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Bell, Filter, Plus } from "lucide-react";
+import { Search, Bell, Filter, Plus, ShieldCheck } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface TopbarProps {
   title: string;
@@ -24,6 +25,10 @@ export function Topbar({
 }: TopbarProps) {
   const [q, setQ] = useState("");
   const [focused, setFocused] = useState(false);
+  const { data: session } = useSession();
+
+  const role = (session?.user as any)?.role || "AGENT";
+  const isAdmin = role === "ADMIN";
 
   return (
     <header
@@ -43,18 +48,38 @@ export function Topbar({
     >
       {/* Title */}
       <div style={{ flexShrink: 0 }}>
-        <h1
-          style={{
-            fontSize: 17,
-            fontWeight: 700,
-            color: "#fff",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.15,
-            margin: 0,
-          }}
-        >
-          {title}
-        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+           <h1
+            style={{
+              fontSize: 17,
+              fontWeight: 700,
+              color: "#fff",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.15,
+              margin: 0,
+            }}
+          >
+            {title}
+          </h1>
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: 4, 
+            padding: "2px 8px", 
+            borderRadius: 6, 
+            background: isAdmin ? "rgba(16,185,129,0.1)" : "rgba(129,140,248,0.1)",
+            border: `1px solid ${isAdmin ? "rgba(16,185,129,0.2)" : "rgba(129,140,248,0.2)"}`,
+            fontSize: 9,
+            fontWeight: 800,
+            color: isAdmin ? "#34d399" : "#818cf8",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            marginTop: 2
+          }}>
+            {isAdmin && <ShieldCheck style={{ width: 10, height: 10 }} />}
+            {role}
+          </div>
+        </div>
         {subtitle && (
           <p style={{ fontSize: 11.5, color: "var(--muted)", margin: "1px 0 0", lineHeight: 1 }}>
             {subtitle}

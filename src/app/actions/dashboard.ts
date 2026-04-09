@@ -1,9 +1,26 @@
 "use server";
 
 import prisma from "@/lib/db";
+import { auth } from "@/auth";
 
 export async function getDashboardStatsAction() {
   try {
+    const session = await auth();
+    if (!session?.user) return null;
+
+    const userId = session.user.id;
+    const role = (session.user as any).role;
+
+    const whereUser: any = {};
+    if (role === "AGENT") {
+      whereUser.assignedAgentId = userId;
+    }
+
+    const whereSale: any = {};
+    if (role === "AGENT") {
+      whereSale.agentId = userId;
+    }
+
     const [
       totalLeads,
       activeLeads,
@@ -11,12 +28,12 @@ export async function getDashboardStatsAction() {
       totalSales,
       totalRevenue
     ] = await Promise.all([
-      prisma.lead.count(),
-      prisma.lead.count({ where: { status: { in: ["NEW", "CONTACTED", "INTERESTED"] } } }),
-      prisma.lead.count({ where: { status: "CONVERTED" } }),
-      prisma.sale.count({ where: { status: "PAID" } }),
+      prisma.lead.count({ where: whereUser }),
+      prisma.lead.count({ where: { ...whereUser, status: { in: ["NEW", "CONTACTED", "INTERESTED"] } } }),
+      prisma.lead.count({ where: { ...whereUser, status: "CONVERTED" } }),
+      prisma.sale.count({ where: { ...whereSale, status: "PAID" } }),
       prisma.sale.aggregate({
-        where: { status: "PAID" },
+        where: { ...whereSale, status: "PAID" },
         _sum: { amount: true }
       })
     ]);
@@ -27,11 +44,11 @@ export async function getDashboardStatsAction() {
 
     const [dailyLeads, dailySales] = await Promise.all([
       prisma.lead.findMany({
-        where: { createdAt: { gte: last7Days } },
+        where: { ...whereUser, createdAt: { gte: last7Days } },
         select: { createdAt: true }
       }),
       prisma.sale.findMany({
-        where: { createdAt: { gte: last7Days } },
+        where: { ...whereSale, createdAt: { gte: last7Days } },
         select: { createdAt: true, amount: true }
       })
     ]);
@@ -76,6 +93,7 @@ export async function getDashboardStatsAction() {
     // Traffic Source Breakdown
     const sourceStats = await prisma.lead.groupBy({
       by: ['source'],
+      where: whereUser,
       _count: true
     });
 
@@ -100,6 +118,7 @@ export async function getDashboardStatsAction() {
     // Funnel data
     const funnelStages = await prisma.lead.groupBy({
       by: ['status'],
+      where: whereUser,
       _count: true
     });
 

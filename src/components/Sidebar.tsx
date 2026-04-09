@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Users,
@@ -14,28 +15,35 @@ import {
   Zap,
   ShoppingBag,
   UserCog,
+  LogOut,
 } from "lucide-react";
 
-const NAV = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/leads", label: "Leads", icon: Users },
-  { href: "/sales", label: "Sales", icon: DollarSign },
-  { href: "/products", label: "Products", icon: ShoppingBag },
-  { href: "/performance", label: "Performance", icon: TrendingUp },
-  { href: "/agents", label: "Agents", icon: UserCog },
-  { href: "/assign", label: "Assign", icon: UserCheck },
+const NAV_ITEMS = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "AGENT"] },
+  { href: "/leads", label: "Leads", icon: Users, roles: ["ADMIN", "AGENT"] },
+  { href: "/sales", label: "Sales", icon: DollarSign, roles: ["ADMIN"] },
+  { href: "/products", label: "Products", icon: ShoppingBag, roles: ["ADMIN"] },
+  { href: "/performance", label: "Performance", icon: TrendingUp, roles: ["ADMIN"] },
+  { href: "/agents", label: "Agents", icon: UserCog, roles: ["ADMIN"] },
+  { href: "/assign", label: "Assign", icon: UserCheck, roles: ["ADMIN"] },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+
+  if (pathname === "/login") return null;
+
+  const role = (session?.user as any)?.role || "AGENT";
+  const filteredNav = NAV_ITEMS.filter(item => item.roles.includes(role));
 
   return (
     <aside
       style={{
         width: collapsed ? 68 : 232,
-        background: "var(--surface-1)",
-        borderRight: "1px solid var(--border)",
+        background: "#0c0c0e",
+        borderRight: "1px solid #1f1f23",
         height: "100vh",
         position: "sticky",
         top: 0,
@@ -55,144 +63,76 @@ export function Sidebar() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: collapsed ? "0 18px" : "0 16px 0 18px",
-          borderBottom: "1px solid var(--border)",
+          borderBottom: "1px solid #1f1f23",
           flexShrink: 0,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              background: "rgba(99,102,241,0.25)",
-              border: "1px solid rgba(99,102,241,0.4)",
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: "rgba(99,102,241,0.15)",
+              border: "1px solid rgba(99,102,241,0.3)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              flexShrink: 0,
             }}
           >
-            <Zap style={{ width: 16, height: 16, color: "#818cf8" }} />
+            <Zap style={{ width: 14, height: 14, color: "#818cf8" }} />
           </div>
           {!collapsed && (
-            <span
-              style={{
-                fontSize: 16,
-                fontWeight: 700,
-                color: "#fff",
-                letterSpacing: "-0.02em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              CRM
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
+              CRM <span style={{ color: "#6366f1", fontSize: 10, marginLeft: 4, fontWeight: 600 }}>PRO</span>
             </span>
           )}
         </div>
-
-        {/* Collapse button */}
-        {!collapsed && (
-          <button
-            onClick={() => setCollapsed(true)}
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: 7,
-              background: "var(--surface-3)",
-              border: "1px solid var(--border)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            <ChevronLeft style={{ width: 13, height: 13, color: "var(--muted)" }} />
-          </button>
-        )}
-        {collapsed && (
-          <button
-            onClick={() => setCollapsed(false)}
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: 7,
-              background: "var(--surface-3)",
-              border: "1px solid var(--border)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            <ChevronLeft
-              style={{
-                width: 13,
-                height: 13,
-                color: "var(--muted)",
-                transform: "rotate(180deg)",
-              }}
-            />
-          </button>
-        )}
+        
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 6,
+            background: "#18181b",
+            border: "1px solid #27272a",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "#71717a",
+          }}
+        >
+          <ChevronLeft style={{ width: 12, height: 12, transform: collapsed ? "rotate(180deg)" : "none" }} />
+        </button>
       </div>
 
       {/* ── Nav ── */}
-      <nav
-        style={{
-          flex: 1,
-          padding: collapsed ? "16px 10px" : "16px 12px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
-          overflowY: "auto",
-          overflowX: "hidden",
-        }}
-      >
-        {NAV.map(({ href, label, icon: Icon }) => {
+      <nav style={{ flex: 1, padding: "16px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
+        {filteredNav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
             <Link
               key={href}
               href={href}
-              title={collapsed ? label : undefined}
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
+                gap: 12,
                 padding: collapsed ? "10px 0" : "10px 12px",
                 borderRadius: 10,
                 textDecoration: "none",
                 justifyContent: collapsed ? "center" : "flex-start",
-                background: active ? "#6366f1" : "transparent",
-                color: active ? "#fff" : "var(--muted)",
+                background: active ? "rgba(99,102,241,0.1)" : "transparent",
+                color: active ? "#818cf8" : "#71717a",
                 fontWeight: active ? 600 : 500,
-                fontSize: 14,
-                transition: "all 0.15s",
-                whiteSpace: "nowrap",
-                boxShadow: active ? "0 4px 16px rgba(99,102,241,0.3)" : "none",
-              }}
-              onMouseEnter={(e) => {
-                if (!active) {
-                  e.currentTarget.style.background = "var(--surface-3)";
-                  e.currentTarget.style.color = "var(--foreground)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!active) {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--muted)";
-                }
+                fontSize: 13,
+                transition: "all 0.2s",
+                border: active ? "1px solid rgba(99,102,241,0.2)" : "1px solid transparent",
               }}
             >
-              <Icon
-                style={{
-                  width: 17,
-                  height: 17,
-                  flexShrink: 0,
-                  color: active ? "#fff" : "inherit",
-                }}
-              />
+              <Icon style={{ width: 16, height: 16, flexShrink: 0 }} />
               {!collapsed && <span>{label}</span>}
             </Link>
           );
@@ -200,95 +140,37 @@ export function Sidebar() {
       </nav>
 
       {/* ── Footer ── */}
-      <div
-        style={{
-          padding: collapsed ? "12px 10px" : "12px",
-          borderTop: "1px solid var(--border)",
-          flexShrink: 0,
-        }}
-      >
-        <Link
-          href="/settings"
-          title={collapsed ? "Settings" : undefined}
+      <div style={{ padding: "12px", borderTop: "1px solid #1f1f23" }}>
+         <button
+          onClick={() => signOut()}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            padding: collapsed ? "9px 0" : "9px 12px",
+            gap: 12,
+            width: "100%",
+            padding: collapsed ? "10px 0" : "10px 12px",
+            background: "none",
+            border: "none",
             borderRadius: 10,
-            textDecoration: "none",
+            cursor: "pointer",
             justifyContent: collapsed ? "center" : "flex-start",
-            color: "var(--muted)",
+            color: "#f87171",
+            fontSize: 13,
             fontWeight: 500,
-            fontSize: 14,
-            transition: "all 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--surface-3)";
-            e.currentTarget.style.color = "var(--foreground)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "var(--muted)";
           }}
         >
-          <Settings style={{ width: 17, height: 17, flexShrink: 0 }} />
-          {!collapsed && <span>Settings</span>}
-        </Link>
+          <LogOut style={{ width: 16, height: 16 }} />
+          {!collapsed && <span>Logout</span>}
+        </button>
 
-        {!collapsed && (
-          <div
-            style={{
-              marginTop: 12,
-              padding: "8px 12px",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <div
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                background: "#6366f1",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#fff",
-                flexShrink: 0,
-              }}
-            >
-              AD
+        {!collapsed && session?.user && (
+          <div style={{ marginTop: 12, padding: "8px 12px", display: "flex", alignItems: "center", gap: 10, background: "#18181b", borderRadius: 12 }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 700 }}>
+              {session.user.name?.[0]?.toUpperCase() || "U"}
             </div>
             <div style={{ minWidth: 0 }}>
-              <p
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#fff",
-                  lineHeight: 1,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Admin
-              </p>
-              <p
-                style={{
-                  fontSize: 11,
-                  color: "var(--muted)",
-                  marginTop: 3,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                admin@company.com
-              </p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session.user.name}</p>
+              <p style={{ fontSize: 10, color: "#71717a", textTransform: "capitalize" }}>{role.toLowerCase()}</p>
             </div>
           </div>
         )}

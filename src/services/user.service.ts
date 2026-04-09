@@ -1,14 +1,14 @@
 import prisma from "@/lib/db";
 import { Prisma } from "@prisma/client";
 
-export class AgentService {
+export class UserService {
   /**
-   * Calculates exhaustive performance metrics for a single agent
+   * Calculates exhaustive performance metrics for a single user
    */
-  static async getAgentMetrics(agentId: string) {
-    const [agent, totalLeads, convertedLeads, totalCalls, sales] = await Promise.all([
-      prisma.agent.findUnique({
-        where: { id: agentId },
+  static async getUserMetrics(userId: string) {
+    const [user, totalLeads, convertedLeads, totalCalls, sales] = await Promise.all([
+      (prisma as any).user.findUnique({
+        where: { id: userId },
         include: {
           leads: {
             include: {
@@ -23,34 +23,34 @@ export class AgentService {
           }
         }
       }),
-      prisma.lead.count({ where: { assignedAgentId: agentId } }),
-      prisma.lead.count({ where: { assignedAgentId: agentId, status: "CONVERTED" } }),
-      prisma.call.count({ where: { agentId: agentId } }),
-      prisma.sale.aggregate({
-        where: { agentId: agentId },
+      (prisma as any).lead.count({ where: { assignedAgentId: userId } }),
+      (prisma as any).lead.count({ where: { assignedAgentId: userId, status: "CONVERTED" } }),
+      (prisma as any).call.count({ where: { agentId: userId } }),
+      (prisma as any).sale.aggregate({
+        where: { agentId: userId },
         _sum: { amount: true }
       })
     ]);
 
-    if (!agent) return null;
+    if (!user) return null;
 
     const totalRevenue = Number(sales._sum.amount || 0);
     const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
     const avgAttemptsPerLead = totalLeads > 0 ? totalCalls / totalLeads : 0;
 
     // Source breakdown
-    const sources = await prisma.lead.groupBy({
+    const sources = await (prisma as any).lead.groupBy({
       by: ['source'],
-      where: { assignedAgentId: agentId },
+      where: { assignedAgentId: userId },
       _count: true
     });
 
     return {
-      agent: {
-        id: agent.id,
-        name: agent.name,
-        email: agent.email,
-        leads: agent.leads.map(lead => ({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        leads: user.leads.map((lead: any) => ({
           id: lead.id,
           name: lead.name,
           status: lead.status,
@@ -73,15 +73,15 @@ export class AgentService {
       conversionRate,
       avgAttemptsPerLead,
       totalCalls,
-      sources: sources.map(s => ({ source: s.source, count: s._count }))
+      sources: sources.map((s: any) => ({ source: s.source, count: s._count }))
     };
   }
 
   /**
-   * Returns top performing agents based on Revenue/Conversion
+   * Returns top performing users based on Revenue/Conversion
    */
   static async getTopPerformers() {
-    const agents = await prisma.agent.findMany({
+    const users = await (prisma as any).user.findMany({
       include: {
         _count: {
           select: {
@@ -114,20 +114,19 @@ export class AgentService {
       }
     });
 
-    return agents.map(agent => ({
-      id: agent.id,
-      name: agent.name,
-      email: agent.email,
-      revenue: agent.sales.reduce((sum, s) => sum + Number(s.amount), 0),
-      conversionRate: agent._count.leads > 0 
-        ? (agent._count.sales / agent._count.leads) * 100 
+    return users.map((user: any) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      revenue: user.sales.reduce((sum: number, s: any) => sum + Number(s.amount), 0),
+      conversionRate: user._count.leads > 0 
+        ? (user._count.sales / user._count.leads) * 100 
         : 0,
-      avgAttempts: agent._count.leads > 0 
-        ? (agent._count.calls / agent._count.leads)
+      avgAttempts: user._count.leads > 0 
+        ? (user._count.calls / user._count.leads)
         : 0,
-      _count: agent._count,
-      // Convert nested sales and product prices from Decimal to number
-      leads: agent.leads.map(lead => ({
+      _count: user._count,
+      leads: user.leads.map((lead: any) => ({
         id: lead.id,
         name: lead.name,
         status: lead.status,

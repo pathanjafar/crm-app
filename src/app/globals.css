@@ -85,6 +85,17 @@ body {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+/* ── Form Inputs ── */
+select, option {
+  background-color: var(--surface-1);
+  color: var(--foreground);
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--border-active);
+}
+
 .search-input::placeholder {
   color: var(--muted);
 }

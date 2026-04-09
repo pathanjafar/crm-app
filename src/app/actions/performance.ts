@@ -1,18 +1,18 @@
 "use server";
 
-import { AgentService } from "@/services/agent.service";
+import { UserService } from "@/services/user.service";
 
 export async function getPerformanceAction() {
   try {
-    const agents = await AgentService.getTopPerformers();
+    const agents = await UserService.getTopPerformers();
     
     // Aggregates for team stats
-    const totalRevenue = agents.reduce((sum, a) => sum + (a.revenue || 0), 0);
-    const totalLeads = agents.reduce((sum, a) => sum + (a._count.leads || 0), 0);
+    const totalRevenue = agents.reduce((sum: number, a: any) => sum + (a.revenue || 0), 0);
+    const totalLeads = agents.reduce((sum: number, a: any) => sum + (a._count.leads || 0), 0);
     const avgConv = agents.length > 0 
-      ? agents.reduce((sum, a) => sum + (a.conversionRate || 0), 0) / agents.length 
+      ? agents.reduce((sum: number, a: any) => sum + (a.conversionRate || 0), 0) / agents.length 
       : 0;
-    const totalCalls = agents.reduce((sum, a) => sum + (a._count.calls || 0), 0);
+    const totalCalls = agents.reduce((sum: number, a: any) => sum + (a._count.calls || 0), 0);
 
     return {
       agents,

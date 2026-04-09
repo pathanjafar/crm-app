@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Users, ShieldCheck, Zap, Target, Mail, Search, Filter, Upload, Edit, X, Save, Trash2 } from "lucide-react";
+import { Eye, Plus, Users, ShieldCheck, Zap, Target, Mail, Search, Filter, Upload, Edit, X, Save, Trash2 } from "lucide-react";
 import { Topbar } from "@/components/Topbar";
 import { getLeadsAction, bulkImportLeadsAction, createLeadAction, updateLeadAction, deleteLeadAction } from "@/app/actions/leads";
 import Papa from "papaparse";
@@ -172,6 +173,18 @@ export default function LeadsPage() {
                       </td>
                       <td style={tdStyle}>
                          <div style={{ display: "flex", gap: 4 }}>
+                           <Link 
+                             href={`/leads/${lead.id}`}
+                             style={{ 
+                                background: "none", border: "none", cursor: "pointer", 
+                                color: "var(--muted)", padding: 6, borderRadius: 6, 
+                                transition: "all 0.2s", display: "flex", alignItems: "center"
+                             }}
+                             onMouseEnter={e => e.currentTarget.style.color = "#818cf8"}
+                             onMouseLeave={e => e.currentTarget.style.color = "var(--muted)"}
+                           >
+                             <Eye style={{ width: 16, height: 16 }} />
+                           </Link>
                            <button 
                              onClick={() => handleEdit(lead)}
                              style={{ 

@@ -26,10 +26,17 @@ export class LeadService {
   }
 
   /**
-   * Fetches all leads
+   * Fetches leads based on user role
    */
-  static async getLeads() {
+  static async getLeads(userId?: string, role?: string) {
+    const whereClause: any = {};
+    
+    if (role === "AGENT" && userId) {
+      whereClause.assignedAgentId = userId;
+    }
+
     const leads = await prisma.lead.findMany({
+      where: whereClause,
       orderBy: { createdAt: "desc" },
       include: { agent: { select: { id: true, name: true } } }
     });

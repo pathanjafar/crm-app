@@ -6,11 +6,12 @@ datasource db {
   provider = "postgresql"
 }
 
-model Agent {
+model User {
   id             String     @id @default(uuid())
   name           String
   email          String     @unique
-  phone          String?
+  password       String?
+  phone          String?    @unique
   role           Role       @default(AGENT)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
@@ -20,7 +21,7 @@ model Agent {
   assignedByLead Lead[]     @relation("AssignedLeads")
   sales          Sale[]
 
-  @@map("agents")
+  @@map("users")
 }
 
 model Product {
@@ -67,8 +68,8 @@ model Lead {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   calls           Call[]
-  agent           Agent?     @relation("AgentLeads", fields: [assignedAgentId], references: [id])
-  assignedBy      Agent?     @relation("AssignedLeads", fields: [assignedById], references: [id])
+  agent           User?      @relation("AgentLeads", fields: [assignedAgentId], references: [id])
+  assignedBy      User?      @relation("AssignedLeads", fields: [assignedById], references: [id])
   sales           Sale[]
 
   @@index([assignedAgentId])
@@ -87,7 +88,7 @@ model Call {
   attemptNumber Int         @default(1)
   notes         String?
   createdAt     DateTime    @default(now())
-  agent         Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent         User        @relation(fields: [agentId], references: [id], onDelete: Cascade)
   lead          Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([leadId])
@@ -107,7 +108,7 @@ model Sale {
   paymentMethod String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  agent         Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent         User         @relation(fields: [agentId], references: [id], onDelete: Cascade)
   lead          Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
   product       Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
   pricingTier   PricingTier? @relation(fields: [tierId], references: [id])
@@ -127,10 +128,22 @@ model AuditLog {
   oldValue   Json?
   newValue   Json?
   createdAt  DateTime @default(now())
-  agent      Agent?   @relation(fields: [changedBy], references: [id])
+  agent      User?    @relation(fields: [changedBy], references: [id])
 
   @@map("audit_logs")
 }
+
+model Otp {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@map("otps")
+}
+
 
 enum Role {
   ADMIN
